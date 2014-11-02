@@ -10,13 +10,9 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.swt.widgets.Shell;
 
-import ccfinderx.CCFinderX;
 import ccfinderx.ui.dialogs.ProjectDialog;
-import ccfinderx.utilities.ExecutionModuleDirectory;
 import ccfinderx.utilities.TemporaryFileManager;
-import ccfinderx.utilities.TemporaryMouseCursorChanger;
 
 /**
  * Our sample handler extends AbstractHandler, an IHandler base class.
@@ -35,12 +31,6 @@ public class ExecutionHandler extends AbstractHandler {
 	 * from the application context.
 	 */
 	public Object execute(ExecutionEvent event) throws ExecutionException {
-		Shell shell;
-		//Display display;
-		
-		//display = new Display();
-		shell = new Shell();
-		
 		IWorkspace workspace = ResourcesPlugin.getWorkspace();
 		IWorkspaceRoot wsRoot = workspace.getRoot();
 		IProject[] projects = wsRoot.getProjects();
@@ -66,33 +56,30 @@ public class ExecutionHandler extends AbstractHandler {
 		for (String projectName : dialog.getSelectedProjects())
 		{
 			project = wsRoot.getProject(projectName);
-			selectedProjectsLocation.add(project.getLocation().toString());
+			selectedProjectsLocation.add(project.getLocation().toString().replace("/", "\\"));
 		}
 		
 		//CCFX參數
-		//private final String tempFileName1 = TemporaryFileManager.createTemporaryFileName();
+		String tempDirectory = System.getProperty("java.io.tmpdir");
 		String tempFileName = TemporaryFileManager.createTemporaryFileName();
 		ArrayList<String> args = new ArrayList<String>();
+		args.add("\\ccfx\\ccfx.exe");
 		args.add("F");
 		args.add("java");
-		args.addAll(Arrays.asList(new String[] { "-o", tempFileName }));
+		args.addAll(Arrays.asList(new String[] { "-o", tempDirectory+tempFileName }));
 		
 		for (String directory : selectedProjectsLocation)
 		{
 			args.add(directory);
 		}
 		
-		TemporaryMouseCursorChanger tmcc = new TemporaryMouseCursorChanger(shell);
+		//執行ccfx
 		try {
-			ExecutionModuleDirectory.setDebugMode(true);
-			CCFinderX.theInstance.setModuleDirectory(ExecutionModuleDirectory.get());
-			int r = CCFinderX.theInstance.invokeCCFinderX(args.toArray(new String[0]));
-			if (r != 0) {
-				//showErrorMessage("error in invocation of ccfx."); //$NON-NLS-1$
-				return null;
-			}
-		} finally {
-			tmcc.dispose();
+			Runtime rt = Runtime.getRuntime();
+			Process proc = rt.exec(args.toArray(new String[0]));
+            int exitVal = proc.waitFor();
+            System.out.println ("ExitValue: " + exitVal);
+		} catch (Exception e) {
 		}
 		
 		return null;
