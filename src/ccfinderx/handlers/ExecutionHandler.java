@@ -10,8 +10,10 @@ import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 
+import ccfinderx.constants.CcfxDefaultSettings;
 import ccfinderx.ui.dialogs.ProjectDialog;
 import ccfinderx.utilities.CcfxCommandLine;
+import ccfinderx.utilities.TemporaryFileManager;
 
 /**
  * Our sample handler extends AbstractHandler, an IHandler base class.
@@ -35,7 +37,7 @@ public class ExecutionHandler extends AbstractHandler {
 		IProject[] projects = wsRoot.getProjects();
 		IProject project;
 		ArrayList<String> projectList;
-		ArrayList<String> selectedProjectsLocation;
+		ArrayList<String> selectedProjectDirectories;
 		
 		projectList = new ArrayList<String>();
 		for (IProject p : projects)
@@ -51,24 +53,39 @@ public class ExecutionHandler extends AbstractHandler {
 		dialog.setProjectList(projectList);
 		dialog.setVisible(true);
 		
-		selectedProjectsLocation = new ArrayList<String>();
+		selectedProjectDirectories = new ArrayList<String>();
 		for (String projectName : dialog.getSelectedProjects())
 		{
 			project = wsRoot.getProject(projectName);
-			selectedProjectsLocation.add(project.getLocation().toString());
+			selectedProjectDirectories.add(project.getLocation().toString());
 		}
 		
 		//CCFX參數
 		CcfxCommandLine ccfxCmd = new CcfxCommandLine();
+		boolean usePrescreening = false;
+		String tempFileName = TemporaryFileManager.createTemporaryFileName();
+		String fileListName = null;
 		
 		Runtime rt = Runtime.getRuntime();
 		Process proc;
+		int exitVal;
 		
 		//執行CCFX
 		try {
-			proc = rt.exec(ccfxCmd.findFile(selectedProjectsLocation));
-            int exitVal = proc.waitFor();
-            System.out.println ("ExitValue: " + exitVal);
+			//find files
+			proc = rt.exec(ccfxCmd.findFiles(tempFileName, selectedProjectDirectories));
+			exitVal = proc.waitFor();
+            System.out.println("ExitValue: " + exitVal);
+            //prescreening
+            fileListName = tempFileName;
+            //detect clone data
+			proc = rt.exec(ccfxCmd.detectCodeClones(CcfxDefaultSettings.initEncoding, fileListName, 
+					CcfxDefaultSettings.initMinimumCloneLength, CcfxDefaultSettings.initMinimumTKS, 
+					CcfxDefaultSettings.initShaperLevel, CcfxDefaultSettings.initUsePMatch, 
+					CcfxDefaultSettings.initChunkSize, CcfxDefaultSettings.initMaxWorkerThreads, 
+					selectedProjectDirectories.toArray(new String[0]), usePrescreening));
+            exitVal = proc.waitFor();
+            System.out.println("ExitValue: " + exitVal);
 		} catch (Exception e) {
 		}
 		
