@@ -14,7 +14,8 @@ public class CcfxCommandLine
 	 *  p: pretty-print
 	 *  s: make subset of clone data
 	 * */
-	public static final String ccfxExecutionFile = "\\ccfx\\bin\\ccfx.exe";
+	public static final String ccfxExecutionDirectory = System.getProperty("user.dir") + "\\plugins\\ccfx\\bin\\";
+	public static final String ccfxExecutionFile = ccfxExecutionDirectory + "ccfx.exe";
 	
 	public static String preprocessScript = "";
 	public static String tempFileName = "";
