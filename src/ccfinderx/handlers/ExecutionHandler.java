@@ -70,20 +70,11 @@ public class ExecutionHandler extends AbstractHandler {
 
 		Runtime rt = Runtime.getRuntime();
 		Process proc;
-		int exitVal;
 
 		//執行CCFX
 		try {
-			//change directory
-			//			File file = new File(ccfxCmd.ccfxExecutionDirectory);
-			//			if (file.exists())
-			//			{
-			//				System.setProperty("user.dir", ccfxCmd.ccfxExecutionDirectory);
-			//			}
 			//find files
 			proc = rt.exec(ccfxCmd.findFiles(tempFileName, selectedProjectDirectories));
-			exitVal = proc.waitFor();
-			System.out.println("ExitValue: " + exitVal);
 			outputProcessStream(proc);
 			//prescreening
 			fileListName = tempFileName;
@@ -94,8 +85,6 @@ public class ExecutionHandler extends AbstractHandler {
 					CcfxDefaultSettings.initChunkSize, CcfxDefaultSettings.initMaxWorkerThreads, 
 					selectedProjectDirectories.toArray(new String[0]), usePrescreening);
 			proc = rt.exec(cmdarray);
-			exitVal = proc.waitFor();
-			System.out.println("ExitValue: " + exitVal);
 			outputProcessStream(proc);
 
 		} catch (Exception e) {
