@@ -13,6 +13,7 @@ import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 
 import ccfinderx.constants.CcfxDefaultSettings;
+import ccfinderx.model.Model;
 import ccfinderx.ui.dialogs.ProjectDialog;
 import ccfinderx.utilities.CcfxCommandLine;
 import ccfinderx.utilities.TemporaryFileManager;
@@ -41,6 +42,7 @@ public class ExecutionHandler extends AbstractHandler {
 		ArrayList<String> projectList;
 		ArrayList<String> selectedProjectDirectories;
 
+		//generate project list.
 		projectList = new ArrayList<String>();
 		for (IProject p : projects)
 		{
@@ -51,10 +53,12 @@ public class ExecutionHandler extends AbstractHandler {
 			projectList.add(p.getName());
 		}
 
+		//select project
 		ProjectDialog dialog = new ProjectDialog();
 		dialog.setProjectList(projectList);
 		dialog.setVisible(true);
 
+		//generate full path list
 		selectedProjectDirectories = new ArrayList<String>();
 		for (String projectName : dialog.getSelectedProjects())
 		{
@@ -62,19 +66,24 @@ public class ExecutionHandler extends AbstractHandler {
 			selectedProjectDirectories.add(project.getLocation().toString());
 		}
 
-		//CCFX參數
+		execCCFX(selectedProjectDirectories.toArray(new String[0]));
+
+		return null;
+	}
+	
+	private void execCCFX(String[] preprocessFileDirectories) {
 		CcfxCommandLine ccfxCmd = new CcfxCommandLine();
 		boolean usePrescreening = false;
 		String tempFileName = TemporaryFileManager.createTemporaryFileName();
 		String fileListName = null;
+		Model rootModel = new Model();
 
 		Runtime rt = Runtime.getRuntime();
 		Process proc;
 
-		//執行CCFX
 		try {
 			//find files
-			proc = rt.exec(ccfxCmd.findFiles(tempFileName, selectedProjectDirectories));
+			proc = rt.exec(ccfxCmd.findFiles(tempFileName, preprocessFileDirectories));
 			outputProcessStream(proc);
 			//prescreening
 			fileListName = tempFileName;
@@ -83,14 +92,13 @@ public class ExecutionHandler extends AbstractHandler {
 					CcfxDefaultSettings.initMinimumCloneLength, CcfxDefaultSettings.initMinimumTKS, 
 					CcfxDefaultSettings.initShaperLevel, CcfxDefaultSettings.initUsePMatch, 
 					CcfxDefaultSettings.initChunkSize, CcfxDefaultSettings.initMaxWorkerThreads, 
-					selectedProjectDirectories.toArray(new String[0]), usePrescreening);
+					preprocessFileDirectories, usePrescreening);
 			proc = rt.exec(cmdarray);
 			outputProcessStream(proc);
-
+			
+			rootModel.readCloneDataFile(ccfxCmd.cloneDataFileName);
 		} catch (Exception e) {
 		}
-
-		return null;
 	}
 
 	private void outputProcessStream(Process proc) {

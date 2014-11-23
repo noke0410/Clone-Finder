@@ -28,7 +28,7 @@ public class CcfxCommandLine
 		cloneDataFileName = TemporaryFileManager.getFileNameOnTemporaryDirectory("a.ccfxd");
 	}
 
-	public String[] findFiles(String outPutFileName, ArrayList<String> directories)
+	public String[] findFiles(String outPutFileName, String[] directories)
 	{
 		/* *
 		 * Usage 1: ccfx F PREPROCESS_SCRIPT OPTIONS directories...
