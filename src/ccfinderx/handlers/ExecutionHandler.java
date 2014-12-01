@@ -11,10 +11,15 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.ui.IViewPart;
+import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.PlatformUI;
 
 import ccfinderx.constants.CcfxDefaultSettings;
+import ccfinderx.model.CloneSet;
 import ccfinderx.model.Model;
 import ccfinderx.ui.dialogs.ProjectDialog;
+import ccfinderx.ui.views.CloneSetView;
 import ccfinderx.utilities.CcfxCommandLine;
 import ccfinderx.utilities.TemporaryFileManager;
 
@@ -97,8 +102,33 @@ public class ExecutionHandler extends AbstractHandler {
 			outputProcessStream(proc);
 			
 			rootModel.readCloneDataFile(ccfxCmd.cloneDataFileName);
+			
+			update_model(rootModel);
+			
 		} catch (Exception e) {
 		}
+	}
+	
+	private void update_model(Model data) {
+		int maxCloneSetCount = 500000;
+		long andMoreCloneSetCount;
+		IViewPart iViewPart;
+		CloneSetView cloneSetView;
+		
+		CloneSet[] cloneSets = data.getCloneSets(maxCloneSetCount);
+		andMoreCloneSetCount = data.getCloneSetCount() - cloneSets.length;
+		
+		iViewPart = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().findView(CloneSetView.ID);
+		if (iViewPart == null)
+		{
+			try {
+				iViewPart = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView(CloneSetView.ID);
+			}
+			catch (PartInitException e) {
+			}
+		}
+		cloneSetView = (CloneSetView)iViewPart;
+		cloneSetView.setInput(cloneSets);
 	}
 
 	private void outputProcessStream(Process proc) {

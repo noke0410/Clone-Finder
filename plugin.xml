@@ -5,7 +5,7 @@
          point="org.eclipse.ui.commands">
       <category
             id="CCFINDERX.commands.category"
-            name="Sample Category">
+            name="CCFINDERX">
       </category>
       <command
             categoryId="CCFINDERX.commands.category"
@@ -56,6 +56,38 @@
             </command>
          </toolbar>
       </menuContribution>
+   </extension>
+   <extension
+         point="org.eclipse.ui.views">
+      <category
+            id="CCFINDERX"
+            name="CCFINDERX">
+      </category>
+      <view
+            category="CCFINDERX"
+            class="ccfinderx.ui.views.CloneSetView"
+            icon="icons/sample.gif"
+            id="ccfinderx.ui.views.CloneSetView"
+            name="Clone-Set View">
+      </view>
+   </extension>
+   <extension
+         point="org.eclipse.ui.perspectiveExtensions">
+      <perspectiveExtension
+            targetID="org.eclipse.jdt.ui.JavaPerspective">
+         <view
+               id="ccfinderx.ui.views.CloneSetView"
+               ratio="0.5"
+               relationship="right"
+               relative="org.eclipse.ui.views.ProblemView">
+         </view>
+      </perspectiveExtension>
+   </extension>
+   <extension
+         point="org.eclipse.help.contexts">
+      <contexts
+            file="contexts.xml">
+      </contexts>
    </extension>
 
 </plugin>
