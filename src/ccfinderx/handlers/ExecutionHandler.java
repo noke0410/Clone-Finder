@@ -109,14 +109,9 @@ public class ExecutionHandler extends AbstractHandler {
 		}
 	}
 	
-	private void update_model(Model data) {
-		int maxCloneSetCount = 500000;
-		long andMoreCloneSetCount;
+	private void update_model(Model newModel) {
 		IViewPart iViewPart;
 		CloneSetView cloneSetView;
-		
-		CloneSet[] cloneSets = data.getCloneSets(maxCloneSetCount);
-		andMoreCloneSetCount = data.getCloneSetCount() - cloneSets.length;
 		
 		iViewPart = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().findView(CloneSetView.ID);
 		if (iViewPart == null)
@@ -127,8 +122,11 @@ public class ExecutionHandler extends AbstractHandler {
 			catch (PartInitException e) {
 			}
 		}
+		
+		assert iViewPart != null;
+		
 		cloneSetView = (CloneSetView)iViewPart;
-		cloneSetView.setInput(cloneSets);
+		cloneSetView.updateModel(newModel);
 	}
 
 	private void outputProcessStream(Process proc) {

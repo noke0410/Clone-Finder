@@ -35,7 +35,7 @@
             locationURI="menu:org.eclipse.ui.main.menu?after=additions">
          <menu
                id="CCFINDERX.menus.sampleMenu"
-               label="Sample Menu"
+               label="CCFINDERX"
                mnemonic="M">
             <command
                   commandId="CCFINDERX.commands.sampleCommand"

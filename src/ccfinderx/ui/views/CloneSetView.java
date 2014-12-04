@@ -1,12 +1,16 @@
 package ccfinderx.ui.views;
 
 
+import java.util.Arrays;
+
 import org.eclipse.jface.util.Policy;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Table;
@@ -15,6 +19,7 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
 
 import ccfinderx.model.CloneSet;
+import ccfinderx.model.Model;
 
 
 /**
@@ -41,8 +46,14 @@ public class CloneSetView extends ViewPart {
 	 * The ID of the view as specified by the extension.
 	 */
 	public static final String ID = "ccfinderx.ui.views.CloneSetView";
-
+	
 	private TableViewer viewer;
+	private Table table;
+	
+	private int maxCloneSetCount = 500000;
+	private int indexAndMore;
+	private long andMoreCloneSetCount;
+	private CloneSet[] cloneSets = null;
 
 	/**
 	 * The constructor.
@@ -56,15 +67,21 @@ public class CloneSetView extends ViewPart {
 	 */
 	public void createPartControl(Composite parent) {
 		viewer = new TableViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
-
+		table = viewer.getTable();
+		
+		table.setHeaderVisible(true);
+		table.setLinesVisible(true);
+		
+		table.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				long[] selectedIDs = getSelectedCloneSetIDs();
+			}
+		});
+		
 		// Create the help context id for the viewer's control
 		PlatformUI.getWorkbench().getHelpSystem().setHelp(viewer.getControl(), "CCFINDERX.viewer");
 
 		createColumns(parent, viewer);
-
-		final Table table = viewer.getTable();
-		table.setHeaderVisible(true);
-		table.setLinesVisible(true);
 
 		viewer.setContentProvider(new ArrayContentProvider());
 		// get the content for the viewer, setInput will call getElements in the
@@ -105,7 +122,7 @@ public class CloneSetView extends ViewPart {
 	}
 
 	private void setTableViewerColumn() {
-		TableColumn[] tableColumns = viewer.getTable().getColumns();
+		TableColumn[] tableColumns = table.getColumns();
 
 		for (TableColumn tableColumn:tableColumns) {
 			TableViewerColumn viewerColumn = (TableViewerColumn) tableColumn.getData(Policy.JFACE + ".columnViewer"); //$NON-NLS-1$
@@ -132,10 +149,54 @@ public class CloneSetView extends ViewPart {
 		}
 	}
 
-	public void setInput(Object input) {
-		viewer.setInput(input);
+	private long[] getSelectedCloneSetIDs() {
+		int[] selectedIndex = table.getSelectionIndices();
+		if (selectedIndex.length == 0) {
+			return new long[] {};
+		}
+		
+		int size = selectedIndex.length;
+		if (Arrays.binarySearch(selectedIndex, indexAndMore) >= 0) {
+			--size;
+		}
+		assert size >= 0;
+		long[] ids = new long[size];
+		int p = 0;
+		for (int i = 0; i < selectedIndex.length; ++i) {
+			int index = selectedIndex[i];
+			if (index != indexAndMore) {
+				long id = cloneSets[index].id;
+				ids[p] = id;
+				++p;
+			}
+		}
+		return ids;
 	}
-
+	
+	public void updateModel(Model data) {
+		CloneSet[] cloneSets = data.getCloneSets(maxCloneSetCount);
+		this.andMoreCloneSetCount = data.getCloneSetCount() - cloneSets.length;
+		
+		int size = cloneSets.length;
+		indexAndMore = -1;
+		if (cloneSets.length >= 1 && cloneSets[cloneSets.length - 1].id == -1) {
+			indexAndMore = cloneSets.length - 1;
+			--size;
+		}
+		assert size >= 0;
+		
+		this.cloneSets = new CloneSet[size];
+		for (int i = 0; i < this.cloneSets.length; ++i) {
+			if (i == indexAndMore) {
+				this.cloneSets[i] = new CloneSet(-1, -1);
+			} else {
+				this.cloneSets[i] = cloneSets[i];
+			}
+		}
+		
+		viewer.setInput(cloneSets);
+	}
+	
 	/**
 	 * Passing the focus request to the viewer's control.
 	 */

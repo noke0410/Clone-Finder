@@ -34,6 +34,8 @@ public class ProjectDialog extends JDialog
 	
 	public ProjectDialog()
 	{
+		setTitle("CCFINDERX");
+		setAlwaysOnTop(true);
 		setSize(defaultWidth, defaultHeight);
 		setLocationRelativeTo(null); // 置中顯示
 		
