@@ -9,25 +9,16 @@
       </category>
       <command
             categoryId="CCFINDERX.commands.category"
-            id="CCFINDERX.commands.sampleCommand"
-            name="Sample Command">
+            id="CCFINDERX.commands.executionCommand"
+            name="run">
       </command>
    </extension>
    <extension
          point="org.eclipse.ui.handlers">
       <handler
             class="ccfinderx.handlers.ExecutionHandler"
-            commandId="CCFINDERX.commands.sampleCommand">
+            commandId="CCFINDERX.commands.executionCommand">
       </handler>
-   </extension>
-   <extension
-         point="org.eclipse.ui.bindings">
-      <key
-            commandId="CCFINDERX.commands.sampleCommand"
-            contextId="org.eclipse.ui.contexts.window"
-            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
-            sequence="M1+6">
-      </key>
    </extension>
    <extension
          point="org.eclipse.ui.menus">
@@ -35,12 +26,11 @@
             locationURI="menu:org.eclipse.ui.main.menu?after=additions">
          <menu
                id="CCFINDERX.menus.sampleMenu"
-               label="CCFINDERX"
-               mnemonic="M">
+               label="CCFINDERX">
             <command
-                  commandId="CCFINDERX.commands.sampleCommand"
-                  id="CCFINDERX.menus.sampleCommand"
-                  mnemonic="S">
+                  commandId="CCFINDERX.commands.executionCommand"
+                  icon="icons\lrun_obj.gif"
+                  id="CCFINDERX.menus.executionCommand">
             </command>
          </menu>
       </menuContribution>
@@ -49,10 +39,9 @@
          <toolbar
                id="CCFINDERX.toolbars.sampleToolbar">
             <command
-                  commandId="CCFINDERX.commands.sampleCommand"
+                  commandId="CCFINDERX.commands.executionCommand"
                   icon="icons/sample.gif"
-                  id="CCFINDERX.toolbars.sampleCommand"
-                  tooltip="Say hello world">
+                  id="CCFINDERX.toolbars.executionCommand">
             </command>
          </toolbar>
       </menuContribution>
