@@ -16,7 +16,7 @@ public class CcfxCommandLine
 	 * */
 	public static final String ccfxExecutionDirectory = System.getProperty("user.dir") + "\\plugins\\ccfx\\bin\\";
 	public static final String ccfxExecutionFile = ccfxExecutionDirectory + "ccfx.exe";
-	
+
 	public static String preprocessScript = "";
 	public static String tempFileName = "";
 	public static String cloneDataFileName = "";
@@ -49,9 +49,9 @@ public class CcfxCommandLine
 		 * Usage 4: ccfx F -n [-a] [-o output] directories...
 		 *   Prints out preprocessed-file directories.
 		 * */
-		
+
 		ArrayList<String> cmdarraylist = new ArrayList<String>();
-		
+
 		cmdarraylist.add(ccfxExecutionFile);
 		cmdarraylist.add("F");
 		cmdarraylist.add(preprocessScript);
@@ -60,15 +60,15 @@ public class CcfxCommandLine
 			outPutFileName = tempFileName;
 		}
 		cmdarraylist.addAll(Arrays.asList(new String[] { "-o", outPutFileName }));
-		
+
 		for (String directory : directories)
 		{
 			cmdarraylist.add(directory);
 		}
-		
+
 		return cmdarraylist.toArray(new String[0]);
 	}
-	
+
 	public String[] detectCodeClones(String encodingName, String fileListPath, int minCloneLength, 
 			int minTKS, int shaperLevel, boolean usePMatch, int chunkSize, int maxWorkerThreads, 
 			String[] preprocessFileDirectories, boolean usePrescreening)
@@ -103,7 +103,7 @@ public class CcfxCommandLine
 		 *   --prescreening=LEN.gt.num: don't detect clones from source files of length > num
 		 *   --threads=number: max working threads (0).
 		 * */
-		
+
 		ArrayList<String> cmdarraylist = new ArrayList<String>();
 		cmdarraylist.add(ccfxExecutionFile);
 		cmdarraylist.add("D");
@@ -116,7 +116,7 @@ public class CcfxCommandLine
 		cmdarraylist.addAll(Arrays.asList(new String[] { "-b", String.valueOf(minCloneLength) })); //$NON-NLS-1$
 		cmdarraylist.addAll(Arrays.asList(new String[] { "-t", String.valueOf(minTKS) })); //$NON-NLS-1$
 		if (shaperLevel >= 0)
-{
+		{
 			cmdarraylist.addAll(Arrays.asList(new String[] { "-s", String.valueOf(shaperLevel) })); //$NON-NLS-1$
 		}
 		cmdarraylist.addAll(Arrays.asList(new String[] { "-u", usePMatch ? "+" : "-" })); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
@@ -135,7 +135,7 @@ public class CcfxCommandLine
 		{
 			cmdarraylist.addAll(Arrays.asList(new String[] { "-mr", "masked" }));   //$NON-NLS-1$ //$NON-NLS-2$
 		}
-		
+
 		return cmdarraylist.toArray(new String[0]);
 	}
 }

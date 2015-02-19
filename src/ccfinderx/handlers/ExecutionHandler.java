@@ -12,11 +12,12 @@ import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.ui.IViewPart;
+import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 
 import ccfinderx.constants.CcfxDefaultSettings;
-import ccfinderx.model.CloneSet;
 import ccfinderx.model.Model;
 import ccfinderx.ui.dialogs.ProjectDialog;
 import ccfinderx.ui.views.CloneSetView;
@@ -110,23 +111,29 @@ public class ExecutionHandler extends AbstractHandler {
 	}
 	
 	private void update_model(Model newModel) {
-		IViewPart iViewPart;
+		IWorkbenchWindow window;
+		IWorkbenchPage page;
+		IViewPart view;
 		CloneSetView cloneSetView;
 		
-		iViewPart = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().findView(CloneSetView.ID);
-		if (iViewPart == null)
+		window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+		page = window.getActivePage();
+		
+		view = page.findView(CloneSetView.ID);
+		if (view == null)
 		{
 			try {
-				iViewPart = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView(CloneSetView.ID);
+				view = page.showView(CloneSetView.ID);
 			}
 			catch (PartInitException e) {
 			}
 		}
 		
-		assert iViewPart != null;
+		assert view != null;
 		
-		cloneSetView = (CloneSetView)iViewPart;
+		cloneSetView = (CloneSetView)view;
 		cloneSetView.updateModel(newModel);
+		
 	}
 
 	private void outputProcessStream(Process proc) {

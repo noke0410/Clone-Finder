@@ -9,6 +9,8 @@ import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
@@ -16,6 +18,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.handlers.IHandlerService;
 import org.eclipse.ui.part.ViewPart;
 
 import ccfinderx.model.CloneSet;
@@ -46,19 +49,27 @@ public class CloneSetView extends ViewPart {
 	 * The ID of the view as specified by the extension.
 	 */
 	public static final String ID = "ccfinderx.ui.views.CloneSetView";
-	
+
 	private TableViewer viewer;
 	private Table table;
 	
+	private Model rootModel;
+
 	private int maxCloneSetCount = 500000;
 	private int indexAndMore;
 	private long andMoreCloneSetCount;
 	private CloneSet[] cloneSets = null;
 
+	public long[] selectedCloneSetIDs = new long[] {};
+	
 	/**
 	 * The constructor.
 	 */
 	public CloneSetView() {
+	}
+	
+	public Model getModel() {
+		return rootModel;
 	}
 
 	/**
@@ -68,16 +79,41 @@ public class CloneSetView extends ViewPart {
 	public void createPartControl(Composite parent) {
 		viewer = new TableViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
 		table = viewer.getTable();
-		
+
 		table.setHeaderVisible(true);
 		table.setLinesVisible(true);
-		
+
 		table.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-				long[] selectedIDs = getSelectedCloneSetIDs();
+				selectedCloneSetIDs = getSelectedCloneSetIDs();
 			}
 		});
-		
+
+		table.addMouseListener(new MouseListener()
+		{
+			@Override
+			public void mouseUp(MouseEvent arg0)
+			{
+			}
+
+			@Override
+			public void mouseDown(MouseEvent arg0)
+			{
+			}
+
+			@Override
+			public void mouseDoubleClick(MouseEvent arg0)
+			{
+				IHandlerService handlerService;
+				handlerService = (IHandlerService) getSite().getService(IHandlerService.class);
+				
+				try {
+					handlerService.executeCommand("CCFINDERX.commands.openEditorCommand", null);
+				} catch (Exception ex) {
+				}
+			}
+		});
+
 		// Create the help context id for the viewer's control
 		PlatformUI.getWorkbench().getHelpSystem().setHelp(viewer.getControl(), "CCFINDERX.viewer");
 
@@ -154,7 +190,7 @@ public class CloneSetView extends ViewPart {
 		if (selectedIndex.length == 0) {
 			return new long[] {};
 		}
-		
+
 		int size = selectedIndex.length;
 		if (Arrays.binarySearch(selectedIndex, indexAndMore) >= 0) {
 			--size;
@@ -172,11 +208,12 @@ public class CloneSetView extends ViewPart {
 		}
 		return ids;
 	}
-	
+
 	public void updateModel(Model data) {
+		this.rootModel = data;
 		CloneSet[] cloneSets = data.getCloneSets(maxCloneSetCount);
 		this.andMoreCloneSetCount = data.getCloneSetCount() - cloneSets.length;
-		
+
 		int size = cloneSets.length;
 		indexAndMore = -1;
 		if (cloneSets.length >= 1 && cloneSets[cloneSets.length - 1].id == -1) {
@@ -184,7 +221,7 @@ public class CloneSetView extends ViewPart {
 			--size;
 		}
 		assert size >= 0;
-		
+
 		this.cloneSets = new CloneSet[size];
 		for (int i = 0; i < this.cloneSets.length; ++i) {
 			if (i == indexAndMore) {
@@ -193,10 +230,10 @@ public class CloneSetView extends ViewPart {
 				this.cloneSets[i] = cloneSets[i];
 			}
 		}
-		
+
 		viewer.setInput(cloneSets);
 	}
-	
+
 	/**
 	 * Passing the focus request to the viewer's control.
 	 */

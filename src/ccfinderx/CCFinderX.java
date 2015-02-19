@@ -13,10 +13,15 @@ public class CCFinderX {
 	public native String getApplicationDataPath();
 	public native int getCurrentProcessId();
 	public native boolean isProcessAlive(int processId);
-	
+
 	static {
-		System.loadLibrary("_CCFinderXLib"); //$NON-NLS-1$
+		try {
+			System.loadLibrary("_CCFinderXLib"); //$NON-NLS-1$
+		} catch (UnsatisfiedLinkError e) {
+			System.err.println("Native code library failed to load.\n" + e);
+			System.exit(1);
+		}
 	}
-	
+
 	public static CCFinderX theInstance = new CCFinderX();
 }
