@@ -10,7 +10,12 @@
       <command
             categoryId="CCFINDERX.commands.category"
             id="CCFINDERX.commands.executionCommand"
-            name="run">
+            name="Run">
+      </command>
+      <command
+            categoryId="CCFINDERX.commands.category"
+            id="CCFINDERX.commands.openEditorCommand"
+            name="Open Editor">
       </command>
    </extension>
    <extension
@@ -19,14 +24,18 @@
             class="ccfinderx.handlers.ExecutionHandler"
             commandId="CCFINDERX.commands.executionCommand">
       </handler>
+      <handler
+            class="ccfinderx.handlers.OpenEditorHandler"
+            commandId="CCFINDERX.commands.openEditorCommand">
+      </handler>
    </extension>
    <extension
          point="org.eclipse.ui.menus">
       <menuContribution
             locationURI="menu:org.eclipse.ui.main.menu?after=additions">
          <menu
-               id="CCFINDERX.menus.sampleMenu"
-               label="CCFINDERX">
+               id="CCFINDERX.menus.mainMenu"
+               label="CCFinderX">
             <command
                   commandId="CCFINDERX.commands.executionCommand"
                   icon="icons\lrun_obj.gif"
@@ -55,7 +64,7 @@
       <view
             category="CCFINDERX"
             class="ccfinderx.ui.views.CloneSetView"
-            icon="icons/sample.gif"
+            icon="icons/datasheet.gif"
             id="ccfinderx.ui.views.CloneSetView"
             name="Clone-Set View">
       </view>
@@ -77,6 +86,16 @@
       <contexts
             file="contexts.xml">
       </contexts>
+   </extension>
+   <extension
+         point="org.eclipse.ui.editors">
+      <editor
+            category="CCFINDERX"
+            class="ccfinderx.ui.editors.MultipleTextPaneEditor"
+            icon="icons/showdesc_co.gif"
+            id="ccfinderx.ui.editors.MultipleTextPaneEditor"
+            name="Clone Code">
+      </editor>
    </extension>
 
 </plugin>
