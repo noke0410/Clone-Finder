@@ -9,13 +9,13 @@ exit
 :x64
 if not exist .\bin\_CCFinderXLib.dll exit
 echo Copy to %SystemRoot%\SysWOW64\
-xcopy .\bin\_CCFinderXLib.dll %SystemRoot%\SysWOW64\ /s /y
+copy .\bin\*.dll %SystemRoot%\SysWOW64\ /y /v
 pause
 exit
 
 :x86
 if not exist .\bin\_CCFinderXLib.dll exit
 echo Copy to %SystemRoot%\System32\
-xcopy .\bin\_CCFinderXLib.dll %SystemRoot%\System32\ /s /y
+copy .\bin\*.dll %SystemRoot%\System32\ /y /v
 pause
 exit
