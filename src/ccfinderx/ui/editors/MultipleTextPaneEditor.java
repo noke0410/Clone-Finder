@@ -21,6 +21,8 @@ import org.eclipse.ui.part.EditorPart;
 import ccfinderx.model.ClonePair;
 import ccfinderx.model.CodeFragment;
 import ccfinderx.model.Model;
+import ccfinderx.ui.editors.TextPane.BeginEnd;
+import ccfinderx.utilities.PrepToken;
 
 public class MultipleTextPaneEditor extends EditorPart
 {
@@ -31,6 +33,7 @@ public class MultipleTextPaneEditor extends EditorPart
 	
 	private MultipleTextPaneEditorInput input;
 	private ArrayList<TextPane> textPanes;
+	private ITextRuler ruler;
 	private Composite sc;
 	private SashForm sash;
 	private Model viewedModel;
@@ -102,6 +105,9 @@ public class MultipleTextPaneEditor extends EditorPart
 			sashRulerAndPanes.setLayoutData(gridData);
 		}
 		{
+			ruler = new TextRuler(sc);
+			ruler.setTextPane(this);
+			
 			sash = new SashForm(sashRulerAndPanes, SWT.HORIZONTAL);
 			{
 				GridData gridData = new GridData();
@@ -147,6 +153,12 @@ public class MultipleTextPaneEditor extends EditorPart
 		}
 	}
 	
+	public void setVisibleTokenCenterIndexOfPane(int paneIndex, int tokenIndex) {
+		if (0 <= paneIndex && paneIndex < textPanes.size()) {
+			textPanes.get(paneIndex).setVisibleTokenCenterIndex(tokenIndex);
+		}
+	}
+
 	private void resizePanes(int shownPanes) {
 		final int panes = textPanes.size();
 		final int ntiple = shownPanes > 0 ? shownPanes : 1;
@@ -188,6 +200,24 @@ public class MultipleTextPaneEditor extends EditorPart
 		} finally {
 		}
 
+	}
+	
+	public int[] getViewedFiles() {
+		final int panes = textPanes.size();
+		int count = 0;
+		for (int i = 0; i < panes; ++i) {
+			count += textPanes.get(i).getViewedFiles().length;
+		}
+		int[] files = new int[count];
+		int j = 0;
+		for (int i = 0; i < panes; ++i) {
+			int[] filesI = textPanes.get(i).getViewedFiles();
+			for (int k = 0; k < filesI.length; ++k) {
+				files[j] = filesI[k];
+				++j;
+			}
+		}
+		return files;
 	}
 	
 	public void setClonePairSelection(ClonePair selectedPair) {
@@ -236,6 +266,55 @@ public class MultipleTextPaneEditor extends EditorPart
 		}
 	}
 
+	public boolean setEncoding(String encodingName) {
+		boolean rulerVisible = ruler.isVisible();
+		if (rulerVisible) {
+			ruler.setVisible(false);
+		}
+		boolean result = true;
+		try {
+			final int panes = textPanes.size();
+			for (int i = 0; i < panes; ++i) {
+				result = textPanes.get(i).setEncoding(encodingName);
+				if (! result) {
+					break; // for
+				}
+			}
+			this.ruler.update();
+		} finally {
+			ruler.setVisible(rulerVisible);
+		}
+		return result;
+	}
+	
+	public PrepToken[] getTokens(int fileIndex) {
+		final int panes = textPanes.size();
+		for (int i = 0; i < panes; ++i) {
+			PrepToken[] tokens = textPanes.get(i).getTokens(fileIndex);
+			if (tokens != null) {
+				return tokens;
+			}
+		}
+		return null;
+	}
+	
+	public ClonePair[] getClonePairs(int fileIndex) {
+		final int panes = textPanes.size();
+		for (int i = 0; i < panes; ++i) {
+			ClonePair[] clonePairs = textPanes.get(i).getClonePairs(fileIndex);
+			if (clonePairs != null) {
+				return clonePairs;
+			}
+		}
+		return null;
+	}
+
+	public BeginEnd getVisibleTokenRangeOfPane(int paneIndex) {
+		final int panes = textPanes.size();
+		assert 0 <= paneIndex && paneIndex < panes;
+		return textPanes.get(paneIndex).getVisibleTokenRange();
+	}
+	
 	public void setCloneSelection(long[] cloneSetIDs)
 	{
 		try {

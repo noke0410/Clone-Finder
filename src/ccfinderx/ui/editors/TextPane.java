@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.eclipse.swt.SWT;
@@ -50,6 +51,8 @@ public class TextPane
 	private StyledText text;
 	private Canvas lineNumber;
 
+	private final ArrayList<TextPaneScrollListener> listeners = new ArrayList<TextPaneScrollListener>();
+	
 	private Model viewedModel;
 
 	private int initialTopPosition;
@@ -99,6 +102,23 @@ public class TextPane
 		}
 	}
 	private ScrollRequest textScrollRequest = null;
+	
+	public String getEncoding() {
+		return this.encodingName; // may return null
+	}
+	
+	public boolean setEncoding(String encodingName) {
+		if (encodingName == null) {
+			this.encodingName = "";
+			return true;
+		}
+		
+		this.encodingName = encodingName;
+		if (! Decoder.isValidEncoding(encodingName)) {
+			return false;
+		}
+		return true;
+	}
 	
 	public TextPane(Composite parent)
 	{
@@ -382,6 +402,22 @@ public class TextPane
 		}
 	}
 
+	public PrepToken[] getTokens(int fileIndex) {
+		if (fileIndex == this.fileIndex) {
+			return tokens;
+		}
+		
+		return null;
+	}
+	
+	public ClonePair[] getClonePairs(int fileIndex) {
+		if (fileIndex == this.fileIndex) {
+			return clonePairs;
+		}
+		
+		return null;
+	}
+	
 	public void updateModel(Model data) {
 		viewedModel = data;
 		
@@ -440,6 +476,110 @@ public class TextPane
 
 			return Decoder.decode(seq, encodingName);
 		}
+	}
+
+	public int[] getViewedFiles() {
+		if (fileIndex != -1) {
+			return new int[] { fileIndex };
+		} else {
+			return new int[0];
+		}
+	}
+	
+	public static class BeginEnd {
+		public final int begin;
+		public final int end;
+		public BeginEnd(int begin, int end) {
+			this.begin = begin;
+			this.end = end;
+		}
+	}
+	
+	public void setVisibleTokenCenterIndex(int tokenIndex) {
+		if (tokens == null || tokenEndIndices == null) {
+			return;
+		}
+		
+		boolean textVisible = text.isVisible();
+		if (textVisible) {
+			text.setVisible(false);
+			lineNumber.setVisible(false);
+		}
+		try {
+			if (tokenIndex < 0) {
+				tokenIndex = 0;
+			} else if (tokenIndex >= tokenEndIndices.length) {
+				tokenIndex = tokenEndIndices.length - 1;
+			}
+			
+			int charIndex = tokenEndIndices[tokenIndex];
+			
+			int lineIndex = text.getLineAtOffset(charIndex);
+			
+			final int height = text.getLineHeight();
+			final int lineCount = text.getClientArea().height / height;
+			
+			int topLineIndex = lineIndex - lineCount / 2;
+			if (topLineIndex < 0) {
+				topLineIndex = 0;
+			} else if (topLineIndex >= text.getLineCount()) {
+				topLineIndex = text.getLineCount() - 1;
+			}
+			
+			text.setTopIndex(topLineIndex);
+			for (TextPaneScrollListener listener : TextPane.this.listeners) {
+				listener.textScrolled();
+			}
+		}
+		finally {
+			if (textVisible) {
+				text.setVisible(true);
+				lineNumber.setVisible(true);
+			}
+		}
+	}
+	
+	public BeginEnd getVisibleTokenRange() {
+		if (tokens == null) {
+			return null;
+		}
+		
+		if (tokenEndIndices == null) {
+			tokenEndIndices = new int[tokens.length];
+			for (int i = 0; i < tokens.length; ++i) {
+				tokenEndIndices[i] = tokens[i].endIndex;
+			}
+		}
+		
+		int topLine = text.getTopIndex();
+		int topCharIndex = text.getOffsetAtLine(topLine);
+		final int height = text.getLineHeight();
+		final int lineCount = text.getClientArea().height / height;
+		int bottomLine= topLine + lineCount;
+		int bottomCharIndex = bottomLine < text.getLineCount() ? text.getOffsetAtLine(bottomLine) : text.getCharCount();
+		
+		int topTokenIndex = -1;
+		int bottomTokenIndex = -1;
+		int i = Arrays.binarySearch(tokenEndIndices, topCharIndex);
+		if (i < 0) {
+			i = -(i + 1);
+		}
+		if (i >= tokens.length) {
+			i = tokens.length;
+		}
+		topTokenIndex = i;
+		if (bottomLine >= text.getLineCount()) {
+			return new BeginEnd(topTokenIndex, tokens.length);
+		}
+		i = Arrays.binarySearch(tokenEndIndices, bottomCharIndex);
+		if (i < 0) {
+			i = -(i + 1);
+		}
+		if (i >= tokens.length) {
+			i = tokens.length;
+		}
+		bottomTokenIndex = i;
+		return new BeginEnd(topTokenIndex, bottomTokenIndex);
 	}
 
 	private static int[] downTrianglePath(int x, int y, int width, int height) {

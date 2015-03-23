@@ -66,7 +66,7 @@
             class="ccfinderx.ui.views.CloneSetView"
             icon="icons/datasheet.gif"
             id="ccfinderx.ui.views.CloneSetView"
-            name="Clone-Set View">
+            name="Clone-Set">
       </view>
    </extension>
    <extension
