@@ -25,7 +25,9 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.ScrollBar;
 import org.eclipse.swt.widgets.Shell;
 
@@ -102,6 +104,11 @@ public class TextPane
 		}
 	}
 	private ScrollRequest textScrollRequest = null;
+	
+	public void addListener(int eventType, Listener listener) {
+		assert eventType == SWT.FocusIn;
+		this.text.addListener(eventType, listener);
+	}
 	
 	public String getEncoding() {
 		return this.encodingName; // may return null
@@ -402,6 +409,10 @@ public class TextPane
 		}
 	}
 
+	public Control getControl() {
+		return text;
+	}
+
 	public PrepToken[] getTokens(int fileIndex) {
 		if (fileIndex == this.fileIndex) {
 			return tokens;
@@ -582,6 +593,10 @@ public class TextPane
 		return new BeginEnd(topTokenIndex, bottomTokenIndex);
 	}
 
+	public void addScrollListener(TextPaneScrollListener listener) {
+		this.listeners.add(listener);
+	}
+	
 	private static int[] downTrianglePath(int x, int y, int width, int height) {
 		return new int[] { 
 				x, y, 

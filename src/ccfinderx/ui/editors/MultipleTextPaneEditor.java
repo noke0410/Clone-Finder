@@ -38,7 +38,10 @@ public class MultipleTextPaneEditor extends EditorPart
 	private SashForm sash;
 	private Model viewedModel;
 	private boolean independentMode;
+	private int focusedTextPaneIndex = -1;
 
+	private ArrayList<Listener> addedListeners = new ArrayList<Listener>();
+	
 	public MultipleTextPaneEditor()
 	{
 		// TODO Auto-generated constructor stub
@@ -120,9 +123,23 @@ public class MultipleTextPaneEditor extends EditorPart
 			
 			for (int i = 0; i < ntipleText; ++i) {
 				TextPane pane = new TextPane(sash);
+				pane.addScrollListener(ruler);
+				for (int j = 0; j < addedListeners.size(); ++j) {
+					final Listener listener = addedListeners.get(j);
+					pane.addListener(SWT.FocusIn, listener);
+				}
+				pane.addListener(SWT.FocusIn, new Listener() {
+					public void handleEvent(Event event) {
+						for (int i = 0; i < textPanes.size(); ++i) {
+							if (event.widget == textPanes.get(i).getControl()) {
+								MultipleTextPaneEditor.this.focusedTextPaneIndexChanged(i);
+							}
+						}
+					}
+				});
 				textPanes.add(pane);
 			}
-			/*
+			
 			{
 				int[] weights = new int[ntipleText];
 				weights[0] = 1;
@@ -131,14 +148,18 @@ public class MultipleTextPaneEditor extends EditorPart
 				}
 				sash.setWeights(weights);
 			}
-			{
-				int[] weights = new int[] { 3, 36 };
-				//sashRulerAndPanes.setWeights(weights);
-			}
-			*/
 		}
+		//{
+		//	int[] weights = new int[] { 3, 36 };
+		//	sashRulerAndPanes.setWeights(weights);
+		//}
 	}
 
+	private void focusedTextPaneIndexChanged(int index) {
+		MultipleTextPaneEditor.this.focusedTextPaneIndex = index;
+		//this.ruler.changeFocusedTextPane(index);
+	}
+	
 	@Override
 	public void setFocus()
 	{
