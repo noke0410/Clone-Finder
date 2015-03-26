@@ -206,6 +206,10 @@ public class MultipleTextPaneEditor extends EditorPart
 		}
 		final int panes = textPanes.size();
 		assert panes >= ntiple;
+		boolean rulerVisible = ruler.isVisible();
+		if (rulerVisible) {
+			ruler.setVisible(false);
+		}
 		try {
 			{
 				int i;
@@ -219,6 +223,7 @@ public class MultipleTextPaneEditor extends EditorPart
 			}
 			resizePanes(ntiple);
 		} finally {
+			ruler.setVisible(rulerVisible);
 		}
 
 	}
@@ -244,6 +249,10 @@ public class MultipleTextPaneEditor extends EditorPart
 	public void setClonePairSelection(ClonePair selectedPair) {
 		changeIndependentMode(false);
 		
+		boolean rulerVisible = ruler.isVisible();
+		if (rulerVisible) {
+			ruler.setVisible(false);
+		}
 		try {
 			final int panes = textPanes.size();
 			textPanes.get(0).setCodeFragmentSelection(selectedPair.getLeftCodeFragment(), selectedPair.classID);
@@ -258,7 +267,9 @@ public class MultipleTextPaneEditor extends EditorPart
 				weights[i] = 0;
 			}
 			sash.setWeights(weights);
+			this.ruler.updateViewLocationDisplay();
 		} finally {
+			ruler.setVisible(rulerVisible);
 		}
 	}
 	
@@ -352,6 +363,10 @@ public class MultipleTextPaneEditor extends EditorPart
 		
 		changeIndependentMode(false);
 		
+		boolean rulerVisible = ruler.isVisible();
+		if (rulerVisible) {
+			ruler.setVisible(false);
+		}
 		try {
 			final int panes = textPanes.size();
 			for (int i = 0; i < panes; ++i) {
@@ -365,7 +380,9 @@ public class MultipleTextPaneEditor extends EditorPart
 				}
 				this.setSelection(indices, isAllFileViewedModeEnabled);
 			}
+			this.ruler.update();
 		} finally {
+			ruler.setVisible(rulerVisible);
 		}
 	}
 

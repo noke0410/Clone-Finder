@@ -17,6 +17,8 @@ import java.util.Arrays;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
+import org.eclipse.swt.events.PaintEvent;
+import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
@@ -182,8 +184,25 @@ public class TextPane
 			gridData.heightHint = 200;
 			lineNumber.setLayoutData(gridData);
 		}
+		lineNumber.addPaintListener(new PaintListener() {
+			public void paintControl(PaintEvent e) {
+				redrawLineNumber(e.gc, false);
+				for (TextPaneScrollListener listener : TextPane.this.listeners) {
+					listener.textScrolled();
+				}
+			}
+		});
 
 		text = new StyledText(lineNumberAndText, SWT.H_SCROLL | SWT.V_SCROLL);
+		text.addPaintListener(new PaintListener() {
+			public void paintControl(PaintEvent e) {
+				final ScrollRequest sr = TextPane.this.textScrollRequest;
+				if (sr != null) {
+					sr.run();
+					TextPane.this.textScrollRequest = null;
+				}
+			}
+		});
 
 		text.setForeground(TextColors.getNeglectedText());
 		{
