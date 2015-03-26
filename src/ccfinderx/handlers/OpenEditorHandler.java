@@ -1,8 +1,17 @@
 package ccfinderx.handlers;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.util.LinkedHashMap;
+
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IEditorReference;
@@ -15,6 +24,7 @@ import org.eclipse.ui.PlatformUI;
 import ccfinderx.model.ClonePair;
 import ccfinderx.model.CodeFragment;
 import ccfinderx.model.Model;
+import ccfinderx.resources.TextColors;
 import ccfinderx.ui.editors.MultipleTextPaneEditor;
 import ccfinderx.ui.editors.MultipleTextPaneEditorInput;
 import ccfinderx.ui.views.CloneSetView;
@@ -37,6 +47,13 @@ public class OpenEditorHandler extends AbstractHandler
 		MultipleTextPaneEditor multipleTextPaneEditor;
 		long id;
 		Model currentScope;
+		
+		String defaultColorConfigString = "{}";
+		String colorConfigString = readColorConfigFile();
+		pathjson.Converter jsonConv = new pathjson.Converter();
+		LinkedHashMap<String, Object> settings = jsonConv.stringToMap(colorConfigString == null ? defaultColorConfigString : colorConfigString);
+		
+		TextColors.initialize(null, settings);
 		
 		window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
 		page = window.getActivePage();
@@ -105,12 +122,27 @@ public class OpenEditorHandler extends AbstractHandler
 		return null;
 	}
 	
-	private void setCodeFragment(CodeFragment selectedCodeFragment, long cloneSetID, CloneSetView src)
+	private static String readColorConfigFile()
 	{
-		assert selectedCodeFragment != null;
-		
-		long[] selectedIDs = new long[] { cloneSetID };
-		
+		final String directory = System.getProperty("user.dir") + "\\plugins\\ccfx\\bin\\";
+		final String fileName = directory + "colors.json"; //$NON-NLS-1$
+		try {
+			BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), "UTF-8")); //$NON-NLS-1$
+			StringBuilder builder = new StringBuilder();
+			String line;
+			while ((line = in.readLine()) != null) {
+				builder.append(line);
+			}
+			in.close();
+			return builder.toString();
+		} catch (UnsupportedEncodingException e) {
+			return null;
+		} catch (FileNotFoundException e) {
+			return null;
+		} catch (IOException e) {
+			return null;
+		}
 	}
-
 }
+	
+
