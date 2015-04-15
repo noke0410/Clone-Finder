@@ -108,7 +108,7 @@ public class MultipleTextPaneEditor extends EditorPart
 			sashRulerAndPanes.setLayoutData(gridData);
 		}
 		{
-			ruler = new TextRuler(sc);
+			ruler = new TextRuler(sashRulerAndPanes);
 			ruler.setTextPane(this);
 			
 			sash = new SashForm(sashRulerAndPanes, SWT.HORIZONTAL);
@@ -149,10 +149,10 @@ public class MultipleTextPaneEditor extends EditorPart
 				sash.setWeights(weights);
 			}
 		}
-		//{
-		//	int[] weights = new int[] { 3, 36 };
-		//	sashRulerAndPanes.setWeights(weights);
-		//}
+		{
+			int[] weights = new int[] { 3, 36 };
+			sashRulerAndPanes.setWeights(weights);
+		}
 	}
 
 	private void focusedTextPaneIndexChanged(int index) {
