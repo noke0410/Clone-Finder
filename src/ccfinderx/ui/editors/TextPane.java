@@ -1,6 +1,7 @@
 package ccfinderx.ui.editors;
 
 import gnu.trove.TIntArrayList;
+import gnu.trove.TLongHashSet;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -17,8 +18,18 @@ import java.util.Arrays;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
+import org.eclipse.swt.dnd.Clipboard;
+import org.eclipse.swt.dnd.TextTransfer;
+import org.eclipse.swt.dnd.Transfer;
+import org.eclipse.swt.events.MouseAdapter;
+import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.events.TraverseEvent;
+import org.eclipse.swt.events.TraverseListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
@@ -28,8 +39,12 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Menu;
+import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.ScrollBar;
 import org.eclipse.swt.widgets.Shell;
 
@@ -92,10 +107,6 @@ public class TextPane
 	private int searchingIndex = -1;
 	private String searchingText = null;
 
-	public void clearInitalTopPosition() {
-		this.initialTopPosition = -1; // -1 means "not initialized"
-	}
-	
 	private class ScrollRequest {
 		private int cloneIndex;
 		public ScrollRequest(int cloneIndex) {
@@ -107,9 +118,84 @@ public class TextPane
 	}
 	private ScrollRequest textScrollRequest = null;
 	
+	public void clearData() {
+		initialTopPosition = -1; // -1 means "not initialized"
+		initialTokenPosition = 0;
+		
+		fileIndex = -1;
+		file = null;
+		textString = textStringLower = ""; //$NON-NLS-1$
+		tokens = null;
+		tokenEndIndices = null;
+		clonePairs = null;
+		selectedClonePairs = null;
+		lineStatus = null;
+
+		allCloneSetIDsSelectedByRightClick = null;
+		innerfileCloneSetIDsSelectedByRightClick = null;
+		bothCloneSetIDsSelectedByRightClick = null;
+		crossfileCloneSetIDsSelectedByRightClick = null;
+	}
+	
+	public void copyData(TextPane original) {
+		this.encodingName = original.encodingName;
+		
+		this.updateModel(original.viewedModel);
+		boolean originalShowingFile = original.getViewedFiles().length > 0;
+		if (originalShowingFile) {
+			this.setFile(original.fileIndex);
+			this.selectedClonePairs = original.selectedClonePairs.clone();
+		} else {
+			this.fileIndex = -1;
+			this.file = null;
+			this.textString = this.textStringLower = ""; //$NON-NLS-1$
+			this.tokens = null;
+			this.tokenEndIndices = null;
+			this.clonePairs = null;
+			this.selectedClonePairs = null;
+			this.lineStatus = null;
+		}
+		
+		this.allCloneSetIDsSelectedByRightClick = null;
+		this.innerfileCloneSetIDsSelectedByRightClick = null;
+		this.bothCloneSetIDsSelectedByRightClick = null;
+		this.crossfileCloneSetIDsSelectedByRightClick = null;
+		
+		this.initialTopPosition = original.initialTopPosition;
+		this.initialTokenPosition = original.initialTokenPosition;
+		
+		if (originalShowingFile) {
+			setTextHighlightsAndLineStatus(true);
+			this.text.setTopIndex(original.text.getTopIndex());
+		}
+		
+		this.searchingIndex = original.searchingIndex;
+		this.searchingText = original.searchingText;
+	}
+	
+	public void clearInitalTopPosition() {
+		this.initialTopPosition = -1; // -1 means "not initialized"
+	}
+	
+	public int getInitialTokenPotition() {
+		if (initialTopPosition == -1) {
+			return -1; // not defined
+		} else {
+			assert initialTokenPosition != -1;
+			return initialTokenPosition;
+		}
+	}
+	
 	public void addListener(int eventType, Listener listener) {
 		assert eventType == SWT.FocusIn;
 		this.text.addListener(eventType, listener);
+	}
+	
+	public int getWidth() {
+		if (sc == null) {
+			return 1;
+		}
+		return sc.getClientArea().width;
 	}
 	
 	public String getEncoding() {
@@ -129,9 +215,424 @@ public class TextPane
 		return true;
 	}
 	
+	static class SelectionAdapterWithCloneSetIDs extends SelectionAdapter {
+		private TextPane pane;
+		private long[] selectedIDs;
+		public SelectionAdapterWithCloneSetIDs(TextPane pane, long[] selectedIDs) {
+			this.pane = pane;
+			this.selectedIDs = selectedIDs;
+		}
+		@Override
+		public void widgetSelected(SelectionEvent e) {
+			pane.setCloneSelection(selectedIDs, null, false);
+			//pane.mainWindow.setCloneSelection(selectedIDs, pane);
+		}
+	}
+	
+	private static void calc_intersection(TLongHashSet result, TLongHashSet a, TLongHashSet b) {
+		final long[] aary = a.toArray();
+		Arrays.sort(aary);
+		final long[] bary = b.toArray();
+		Arrays.sort(bary);
+		int ai = 0;
+		int bi = 0;
+		while (ai < aary.length && bi < bary.length) {
+			final long av = aary[ai];
+			final long bv = bary[bi];
+			if (av < bv) {
+				++ai;
+			} else if (av == bv) {
+				result.add(av);
+				++ai;
+				++bi;
+			} else {
+				assert av > bv;
+				++bi;
+			}
+		}
+	}
+	
+	public void copyTextToClipboard() {
+		String t = text.getSelectionText();
+		if (t != null && t.length() > 0) {
+			//Clipboard clipboard = TextPane.this.mainWindow.clipboard;
+			Clipboard clipboard = new Clipboard(shell.getDisplay());
+			clipboard.setContents(new Object[]{ text.getSelectionText() }, 
+					new Transfer[]{ TextTransfer.getInstance() });
+		}
+	}
+	
+	public void selectEntireText() {
+		text.selectAll();
+	}
+	
 	public TextPane(Composite parent)
 	{
-		createPartControl(parent);
+		//createPartControl(parent);
+		this.shell = parent.getShell();
+		
+		this.initialTopPosition = -1; // -1 means "not initialized"
+		
+		sc = new Composite(parent, SWT.NONE);
+		{
+			GridLayout layout = new GridLayout(1, false);
+			layout.marginHeight = 0;
+			layout.marginWidth = 0;
+			sc.setLayout(layout);
+		}
+
+		fileNameLabel = new Label(sc, SWT.LEFT);
+		fileNameLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL));
+		fileNameLabel.setText("-"); //$NON-NLS-1$
+		fileNameLabel.setToolTipText(""); //$NON-NLS-1$
+
+		lineNumberAndText = new Composite(sc, SWT.NONE);
+		lineNumberAndText.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+		{
+			GridLayout layout = new GridLayout(2, false);
+			layout.marginHeight = 0;
+			layout.marginWidth = 0;
+			lineNumberAndText.setLayout(layout);
+		}
+		lineNumberAndText.setBackground(TextColors.getWhite());
+		
+		lineNumber = new Canvas(lineNumberAndText, SWT.NONE);
+		{
+			int width = calcWidthOfNumberString(999999);
+			GridData gridData = new GridData(SWT.NONE, SWT.FILL, false, true);
+			gridData.widthHint = width;
+			gridData.heightHint = 200;
+			lineNumber.setLayoutData(gridData);
+		}
+		lineNumber.addPaintListener(new PaintListener() {
+			public void paintControl(PaintEvent e) {
+				redrawLineNumber(e.gc, false);
+				for (TextPaneScrollListener listener : TextPane.this.listeners) {
+					listener.textScrolled();
+				}
+			}
+		});
+		
+		text = new StyledText(lineNumberAndText, SWT.H_SCROLL | SWT.V_SCROLL);
+		text.addPaintListener(new PaintListener() {
+			public void paintControl(PaintEvent e) {
+				final ScrollRequest sr = TextPane.this.textScrollRequest;
+				if (sr != null) {
+					sr.run();
+					TextPane.this.textScrollRequest = null;
+				}
+			}
+		});
+		fileNameLabel.addMouseListener(new MouseAdapter() {
+			public void mouseDown(MouseEvent e) {
+				text.forceFocus();
+			}
+		});
+		fileNameLabel.addMouseListener(new MouseAdapter() {
+			public void mouseDown(MouseEvent e) {
+				boolean rightClick = e.button == 3;
+				if (rightClick) {
+					Menu pmenu = new Menu(TextPane.this.shell, SWT.POP_UP);
+					fileNameLabel.setMenu(pmenu);
+					{
+						MenuItem pitem = new MenuItem(pmenu, SWT.PUSH);
+						pitem.setText("Copy &File Path"); //$NON-NLS-1$
+						pitem.setSelection(true);
+						pitem.addSelectionListener(new SelectionAdapter() {
+							public void widgetSelected(SelectionEvent e) {
+								//Clipboard clipboard = TextPane.this.mainWindow.clipboard;
+								Clipboard clipboard = new Clipboard(shell.getDisplay());
+								clipboard.setContents(new Object[]{ TextPane.this.file.path }, 
+										new Transfer[]{ TextTransfer.getInstance() });
+							}
+						});
+					}
+				} else {
+					text.forceFocus();
+				}
+			}
+		});
+		
+		lineNumber.addMouseListener(new MouseAdapter() {
+			public void mouseDown(MouseEvent e) {
+				text.forceFocus();
+			}
+		});
+		text.setForeground(TextColors.getNeglectedText());
+		{
+			GridData gridData = new GridData();
+			gridData.horizontalAlignment = GridData.FILL;
+			gridData.grabExcessHorizontalSpace = true;
+			gridData.verticalAlignment = GridData.FILL;
+			gridData.grabExcessVerticalSpace = true;
+			text.setLayoutData(gridData);
+		}
+		text.setEditable(false);
+		text.setText(""); //$NON-NLS-1$
+		text.addListener(SWT.FocusIn, new Listener() {
+			public void handleEvent(Event event) {
+				final Display display = TextPane.this.shell.getDisplay();
+				fileNameLabel.setBackground(display.getSystemColor(SWT.COLOR_TITLE_BACKGROUND));
+				fileNameLabel.setForeground(display.getSystemColor(SWT.COLOR_TITLE_FOREGROUND));
+			}
+		});
+		text.addListener(SWT.FocusOut, new Listener() {
+			public void handleEvent(Event event) {
+				final Display display = TextPane.this.shell.getDisplay();
+				fileNameLabel.setBackground(display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND));
+				fileNameLabel.setForeground(display.getSystemColor(SWT.COLOR_WIDGET_FOREGROUND));
+			}
+		});
+//debug
+//		text.addModifyListener(new ModifyListener() {
+//			public void modifyText(ModifyEvent e) {
+//				GC gc = new GC(lineNumber);
+//				try {
+//					//TextPane.this.redrawLineNumber(gc, true);
+//					for (TextPaneScrollListener listener : TextPane.this.listeners) {
+//						listener.textScrolled();
+//					}
+//				} finally {
+//					gc.dispose();
+//				}
+//			}
+//		});
+		text.addTraverseListener(new TraverseListener() {
+			public void keyTraversed(TraverseEvent e) {
+				GC gc = new GC(lineNumber);
+				try {
+					TextPane.this.redrawLineNumber(gc, false);
+				} finally {
+					gc.dispose();
+				}
+				for (TextPaneScrollListener listener : TextPane.this.listeners) {
+					listener.textScrolled();
+				}
+			}
+		});
+		text.addMouseListener(new MouseAdapter() {
+			public void mouseDown(MouseEvent e) {
+				final ClonePair[] clonePairs = TextPane.this.clonePairs;
+				final PrepToken[] tokens = TextPane.this.tokens;
+				final int fileIndex = TextPane.this.fileIndex;
+				boolean rightClick = e.button == 3;
+				if (rightClick) {
+					if (clonePairs != null && tokens != null) {
+						int pos;
+						Point clickedPoint = new Point(e.x, e.y);
+						try {
+							pos = text.getOffsetAtLocation(clickedPoint);
+						} catch (IllegalArgumentException ex) {
+							// this means that the point is not on any character.
+							clickedPoint.x = 0;
+							try {
+								pos = text.getOffsetAtLocation(clickedPoint);
+							} catch (IllegalArgumentException ex2) {
+								//TextPane.this.mainWindow.setCloneSelection(new long[0], TextPane.this);
+								return;
+							}
+						}
+						int targetTokenIndex = -1;
+						{
+							assert tokens.length > 0;
+							if (tokens[0].beginIndex <= pos && pos < tokens[0].endIndex) {
+								targetTokenIndex = 0;
+							} else {
+								int lastTokenEndIndex = tokens[0].endIndex;
+								for (int ti = 0; ti < tokens.length; ++ti) {
+									if (lastTokenEndIndex <= pos && pos < tokens[ti].endIndex) {
+										targetTokenIndex = ti;
+										break; // for ti
+									}
+									lastTokenEndIndex = tokens[ti].endIndex;
+								}
+							}
+						}
+						if (targetTokenIndex != -1) {
+							TLongHashSet idsTarget = new TLongHashSet();
+							for (int i = 0; i < clonePairs.length; ++i) {
+								ClonePair p = clonePairs[i];
+								if (p.leftFile == fileIndex) {
+									if (p.leftBegin <= targetTokenIndex && targetTokenIndex < p.leftEnd) {
+										idsTarget.add(p.classID);
+									}
+								} else if (p.rightFile == fileIndex) {
+									if (p.rightBegin <= targetTokenIndex && targetTokenIndex < p.rightEnd) {
+										idsTarget.add(p.classID);
+									}
+								}
+							}
+							TLongHashSet idsInner = new TLongHashSet();
+							TLongHashSet idsCross = new TLongHashSet();
+							for (int i = 0; i < clonePairs.length; ++i) {
+								ClonePair p = clonePairs[i];
+								if (idsTarget.contains(p.classID)) {
+									if (p.leftFile == p.rightFile) {
+										idsInner.add(p.classID);
+									} else {
+										idsCross.add(p.classID);
+									}
+								}
+							}
+							
+							TLongHashSet idsBoth = new TLongHashSet();
+							calc_intersection(idsBoth, idsInner, idsCross);
+							bothCloneSetIDsSelectedByRightClick = idsBoth.toArray();
+							Arrays.sort(bothCloneSetIDsSelectedByRightClick);
+							
+							idsInner.removeAll(bothCloneSetIDsSelectedByRightClick);
+							innerfileCloneSetIDsSelectedByRightClick = idsInner.toArray();
+							Arrays.sort(innerfileCloneSetIDsSelectedByRightClick);
+							
+							idsCross.removeAll(bothCloneSetIDsSelectedByRightClick);
+							crossfileCloneSetIDsSelectedByRightClick = idsCross.toArray();
+							Arrays.sort(crossfileCloneSetIDsSelectedByRightClick);
+							
+							allCloneSetIDsSelectedByRightClick = new long[innerfileCloneSetIDsSelectedByRightClick.length + 
+							                                              bothCloneSetIDsSelectedByRightClick.length +
+							                                              crossfileCloneSetIDsSelectedByRightClick.length];
+							int ii = 0;
+							for (int i = 0; i < innerfileCloneSetIDsSelectedByRightClick.length; ++i) {
+								allCloneSetIDsSelectedByRightClick[ii++] = innerfileCloneSetIDsSelectedByRightClick[i];
+							}
+							for (int i = 0; i < bothCloneSetIDsSelectedByRightClick.length; ++i) {
+								allCloneSetIDsSelectedByRightClick[ii++] = bothCloneSetIDsSelectedByRightClick[i];
+							}
+							for (int i = 0; i < crossfileCloneSetIDsSelectedByRightClick.length; ++i) {
+								allCloneSetIDsSelectedByRightClick[ii++] = crossfileCloneSetIDsSelectedByRightClick[i];
+							}
+							assert ii == allCloneSetIDsSelectedByRightClick.length;
+							Arrays.sort(allCloneSetIDsSelectedByRightClick);
+						} else {
+							innerfileCloneSetIDsSelectedByRightClick = new long[] { };
+							bothCloneSetIDsSelectedByRightClick = new long[] { };
+							crossfileCloneSetIDsSelectedByRightClick = new long[] { };
+							allCloneSetIDsSelectedByRightClick = new long[] { };
+						}
+						
+						{
+							Menu pmenu = new Menu(TextPane.this.shell, SWT.POP_UP);
+							text.setMenu(pmenu);
+	
+							{
+								MenuItem pitem = new MenuItem(pmenu, SWT.PUSH);
+								pitem.setText("Copy &Text"); //$NON-NLS-1$
+								pitem.setSelection(true);
+								pitem.addSelectionListener(new SelectionAdapter() {
+									public void widgetSelected(SelectionEvent e) {
+										TextPane.this.copyTextToClipboard();
+									}
+								});
+							}
+							{
+								MenuItem pitem = new MenuItem(pmenu, SWT.PUSH);
+								pitem.setText("Copy &File Path"); //$NON-NLS-1$
+								pitem.setSelection(true);
+								pitem.addSelectionListener(new SelectionAdapter() {
+									public void widgetSelected(SelectionEvent e) {
+										//Clipboard clipboard = TextPane.this.mainWindow.clipboard;
+										Clipboard clipboard = new Clipboard(shell.getDisplay());
+										clipboard.setContents(new Object[]{ TextPane.this.file.path }, 
+												new Transfer[]{ TextTransfer.getInstance() });
+									}
+								});
+							}
+							new MenuItem(pmenu, SWT.SEPARATOR);
+							{
+								MenuItem pitem = new MenuItem(pmenu, SWT.PUSH);
+								pitem.setText("Select &All Clone Sets Around"); //$NON-NLS-1$
+								pitem.setSelection(true);
+								pitem.addSelectionListener(new SelectionAdapter() {
+									public void widgetSelected(SelectionEvent e) {
+										TextPane.this.setCloneSelection(allCloneSetIDsSelectedByRightClick, null, false);
+										//TextPane.this.mainWindow.setCloneSelection(allCloneSetIDsSelectedByRightClick, TextPane.this);
+									}
+								});
+							}
+							{
+								MenuItem pitemSelectACloneSet = new MenuItem(pmenu, SWT.CASCADE);
+								pitemSelectACloneSet.setText("Select &One Clone Set"); //$NON-NLS-1$
+								Menu pmenuSelectACloneSet = new Menu(pitemSelectACloneSet);
+								pitemSelectACloneSet.setMenu(pmenuSelectACloneSet);
+								if (allCloneSetIDsSelectedByRightClick.length > 0) {
+									for (int i = 0; i < innerfileCloneSetIDsSelectedByRightClick.length; ++i) {
+										MenuItem pitem = new MenuItem(pmenuSelectACloneSet, SWT.PUSH);
+										pitem.setText("ID " + innerfileCloneSetIDsSelectedByRightClick[i]); //$NON-NLS-1$
+										pitem.setSelection(true);
+										pitem.addSelectionListener(new SelectionAdapterWithCloneSetIDs(TextPane.this, new long[] { innerfileCloneSetIDsSelectedByRightClick[i] }));
+									}
+									new MenuItem(pmenuSelectACloneSet, SWT.SEPARATOR);
+									for (int i = 0; i < bothCloneSetIDsSelectedByRightClick.length; ++i) {
+										MenuItem pitem = new MenuItem(pmenuSelectACloneSet, SWT.PUSH);
+										pitem.setText("ID " + bothCloneSetIDsSelectedByRightClick[i]); //$NON-NLS-1$
+										pitem.setSelection(true);
+										pitem.addSelectionListener(new SelectionAdapterWithCloneSetIDs(TextPane.this, new long[] { bothCloneSetIDsSelectedByRightClick[i] }));
+									}
+									new MenuItem(pmenuSelectACloneSet, SWT.SEPARATOR);
+									for (int i = 0; i < crossfileCloneSetIDsSelectedByRightClick.length; ++i) {
+										MenuItem pitem = new MenuItem(pmenuSelectACloneSet, SWT.PUSH);
+										pitem.setText("ID " + crossfileCloneSetIDsSelectedByRightClick[i]); //$NON-NLS-1$
+										pitem.setSelection(true);
+										pitem.addSelectionListener(new SelectionAdapterWithCloneSetIDs(TextPane.this, new long[] { crossfileCloneSetIDsSelectedByRightClick[i] }));
+									}
+								}
+							}
+							new MenuItem(pmenu, SWT.SEPARATOR);
+							{
+								MenuItem pitem = new MenuItem(pmenu, SWT.PUSH);
+								pitem.setText("Copy to &Scrapbook"); //$NON-NLS-1$
+								pitem.setSelection(true);
+								pitem.addSelectionListener(new SelectionAdapter() {
+									public void widgetSelected(SelectionEvent e) {
+										//TextPane.this.mainWindow.copyTextToScrapbook();
+									}
+								});
+							}
+						}
+					}
+				}
+			}
+		});
+		ScrollBar bar = text.getVerticalBar();
+		bar.addSelectionListener(new SelectionListener() {
+			public void widgetSelected(SelectionEvent e) {
+				GC gc = new GC(lineNumber);
+				try {
+					TextPane.this.redrawLineNumber(gc, false);
+				} finally {
+					gc.dispose();
+				}
+				for (TextPaneScrollListener listener : TextPane.this.listeners) {
+					listener.textScrolled();
+				}
+			}
+			public void widgetDefaultSelected(SelectionEvent e) {
+				GC gc = new GC(lineNumber);
+				try {
+					TextPane.this.redrawLineNumber(gc, false);
+				} finally {
+					gc.dispose();
+				}
+				for (TextPaneScrollListener listener : TextPane.this.listeners) {
+					listener.textScrolled();
+				}
+			}
+		});
+		{
+			Menu pmenu = new Menu(shell, SWT.POP_UP);
+			text.setMenu(pmenu);
+
+			{
+				MenuItem pitem = new MenuItem(pmenu, SWT.PUSH);
+				pitem.setText("&Pop Scope"); //$NON-NLS-1$
+				pitem.setSelection(true);
+				pitem.addSelectionListener(new SelectionAdapter() {
+					public void widgetSelected(SelectionEvent e) {
+						//TextPane.this.mainWindow.popScope();
+					}
+				});
+			}
+		}
 	}
 
 	private int calcWidthOfNumberString(int value) {
