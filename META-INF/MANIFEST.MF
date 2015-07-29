@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: CCFINDERX
-Bundle-SymbolicName: CCFINDERX;singleton:=true
+Bundle-Name: Clone Finder
+Bundle-SymbolicName: CloneFinder;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-Activator: ccfinderx.Activator
 Require-Bundle: org.eclipse.ui,

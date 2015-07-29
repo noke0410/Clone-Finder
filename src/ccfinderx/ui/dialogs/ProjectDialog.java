@@ -34,10 +34,10 @@ public class ProjectDialog extends JDialog
 	
 	public ProjectDialog()
 	{
-		setTitle("CCFINDERX");
+		setTitle("Clone Finder");
 		setAlwaysOnTop(true);
 		setSize(defaultWidth, defaultHeight);
-		setLocationRelativeTo(null); // 置中顯示
+		setLocationRelativeTo(null); // 蝵桐葉憿舐內
 		
 		getContentPane().setLayout(new BorderLayout(0, 0));
 		
@@ -80,7 +80,7 @@ public class ProjectDialog extends JDialog
 		setModal(true);
 	}
 	
-	// 設定List.
+	// 閮剖�ist.
 	public void setProjectList(ArrayList<String> items)
 	{
 		listModel = new DefaultListModel<String>();
@@ -94,7 +94,7 @@ public class ProjectDialog extends JDialog
 		list.setSelectedIndex(0);
 	}
 
-	// 取得選擇清單
+	// ������
 	public List<String> getSelectedProjects()
 	{
 		return selectedProjects;

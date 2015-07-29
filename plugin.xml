@@ -4,17 +4,17 @@
    <extension
          point="org.eclipse.ui.commands">
       <category
-            id="CCFINDERX.commands.category"
-            name="CCFINDERX">
+            id="CloneFinder.commands.category"
+            name="CloneFinder">
       </category>
       <command
-            categoryId="CCFINDERX.commands.category"
-            id="CCFINDERX.commands.executionCommand"
+            categoryId="CloneFinder.commands.category"
+            id="CloneFinder.commands.executionCommand"
             name="Run">
       </command>
       <command
-            categoryId="CCFINDERX.commands.category"
-            id="CCFINDERX.commands.openEditorCommand"
+            categoryId="CloneFinder.commands.category"
+            id="CloneFinder.commands.openEditorCommand"
             name="Open Editor">
       </command>
    </extension>
@@ -22,11 +22,11 @@
          point="org.eclipse.ui.handlers">
       <handler
             class="ccfinderx.handlers.ExecutionHandler"
-            commandId="CCFINDERX.commands.executionCommand">
+            commandId="CloneFinder.commands.executionCommand">
       </handler>
       <handler
             class="ccfinderx.handlers.OpenEditorHandler"
-            commandId="CCFINDERX.commands.openEditorCommand">
+            commandId="CloneFinder.commands.openEditorCommand">
       </handler>
    </extension>
    <extension
@@ -34,23 +34,23 @@
       <menuContribution
             locationURI="menu:org.eclipse.ui.main.menu?after=additions">
          <menu
-               id="CCFINDERX.menus.mainMenu"
-               label="CCFinderX">
+               id="CloneFinder.menus.mainMenu"
+               label="CloneFinder">
             <command
-                  commandId="CCFINDERX.commands.executionCommand"
+                  commandId="CloneFinder.commands.executionCommand"
                   icon="icons\lrun_obj.gif"
-                  id="CCFINDERX.menus.executionCommand">
+                  id="CloneFinder.menus.executionCommand">
             </command>
          </menu>
       </menuContribution>
       <menuContribution
             locationURI="toolbar:org.eclipse.ui.main.toolbar?after=additions">
          <toolbar
-               id="CCFINDERX.toolbars.sampleToolbar">
+               id="CloneFinder.toolbars.sampleToolbar">
             <command
-                  commandId="CCFINDERX.commands.executionCommand"
+                  commandId="CloneFinder.commands.executionCommand"
                   icon="icons/sample.gif"
-                  id="CCFINDERX.toolbars.executionCommand">
+                  id="CloneFinder.toolbars.executionCommand">
             </command>
          </toolbar>
       </menuContribution>
@@ -58,11 +58,11 @@
    <extension
          point="org.eclipse.ui.views">
       <category
-            id="CCFINDERX"
-            name="CCFINDERX">
+            id="CloneFinder"
+            name="CloneFinder">
       </category>
       <view
-            category="CCFINDERX"
+            category="CloneFinder"
             class="ccfinderx.ui.views.CloneSetView"
             icon="icons/datasheet.gif"
             id="ccfinderx.ui.views.CloneSetView"
@@ -90,7 +90,7 @@
    <extension
          point="org.eclipse.ui.editors">
       <editor
-            category="CCFINDERX"
+            category="CloneFinder"
             class="ccfinderx.ui.editors.MultipleTextPaneEditor"
             icon="icons/showdesc_co.gif"
             id="ccfinderx.ui.editors.MultipleTextPaneEditor"

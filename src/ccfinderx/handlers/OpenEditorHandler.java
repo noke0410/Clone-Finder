@@ -71,7 +71,7 @@ public class OpenEditorHandler extends AbstractHandler
 		
 		assert cloneSetIDs != null;
 		
-		long[] availableIDs = currentScope.getAvailableCloneSetID(cloneSetIDs);
+		//long[] availableIDs = currentScope.getAvailableCloneSetID(cloneSetIDs);
 		
 		MultipleTextPaneEditorInput input = new MultipleTextPaneEditorInput(id);
 		try {
