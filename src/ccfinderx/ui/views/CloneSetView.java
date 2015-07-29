@@ -108,14 +108,14 @@ public class CloneSetView extends ViewPart {
 				handlerService = (IHandlerService) getSite().getService(IHandlerService.class);
 				
 				try {
-					handlerService.executeCommand("CCFINDERX.commands.openEditorCommand", null);
+					handlerService.executeCommand("CloneFinder.commands.openEditorCommand", null);
 				} catch (Exception ex) {
 				}
 			}
 		});
 
 		// Create the help context id for the viewer's control
-		PlatformUI.getWorkbench().getHelpSystem().setHelp(viewer.getControl(), "CCFINDERX.viewer");
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(viewer.getControl(), "CloneFinder.viewer");
 
 		createColumns(parent, viewer);
 

@@ -1,9 +1,6 @@
 package ccfinderx.ui.editors;
 
-import gnu.trove.TIntArrayList;
-
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.swt.SWT;
@@ -217,9 +214,11 @@ public class MultipleTextPaneEditor extends EditorPart
 					int[] f = new int[] { fileIndices[i] };
 					textPanes.get(i).setSelection(f);
 				}
+				/*
 				for (; i < panes; ++i) {
 					textPanes.get(i).setSelection(null);
 				}
+				 */
 			}
 			resizePanes(ntiple);
 		} finally {

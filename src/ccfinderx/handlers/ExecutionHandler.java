@@ -48,6 +48,8 @@ public class ExecutionHandler extends AbstractHandler {
 		ArrayList<String> projectList;
 		ArrayList<String> selectedProjectDirectories;
 
+		selectedProjectDirectories = new ArrayList<String>();
+		
 		//generate project list.
 		projectList = new ArrayList<String>();
 		for (IProject p : projects)
@@ -58,18 +60,22 @@ public class ExecutionHandler extends AbstractHandler {
 			}
 			projectList.add(p.getName());
 		}
-
-		//select project
-		ProjectDialog dialog = new ProjectDialog();
-		dialog.setProjectList(projectList);
-		dialog.setVisible(true);
-
-		//generate full path list
-		selectedProjectDirectories = new ArrayList<String>();
-		for (String projectName : dialog.getSelectedProjects())
-		{
-			project = wsRoot.getProject(projectName);
+		
+		if (projectList.size() == 1) {
+			project = wsRoot.getProject(projectList.get(0));
 			selectedProjectDirectories.add(project.getLocation().toString());
+		} else {
+			//select project
+			ProjectDialog dialog = new ProjectDialog();
+			dialog.setProjectList(projectList);
+			dialog.setVisible(true);
+
+			//generate full path list
+			for (String projectName : dialog.getSelectedProjects())
+			{
+				project = wsRoot.getProject(projectName);
+				selectedProjectDirectories.add(project.getLocation().toString());
+			}
 		}
 
 		execCCFX(selectedProjectDirectories.toArray(new String[0]));

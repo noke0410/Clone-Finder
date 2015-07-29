@@ -4,7 +4,7 @@
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
 	<classpathentry kind="src" path="src">
 		<attributes>
-			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="CCFINDERX/src/ccfx/bin"/>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="CloneFinder/src/ccfx/bin"/>
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="lib/icu4j-4_0_1.jar"/>
