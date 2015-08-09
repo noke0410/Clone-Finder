@@ -21,8 +21,10 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.IHandlerService;
 import org.eclipse.ui.part.ViewPart;
 
+import ccfinderx.model.ClonePair;
 import ccfinderx.model.CloneSet;
 import ccfinderx.model.Model;
+import ccfinderx.model.SourceFile;
 
 
 /**
@@ -138,8 +140,8 @@ public class CloneSetView extends ViewPart {
 
 	// create the columns for the table
 	private void createColumns(final Composite parent, final TableViewer viewer) {
-		String[] titles = { "Clone-Set ID", "LEN"};
-		int[] bounds = { 100, 100};
+		String[] titles = { "Clone-Set ID", "Left File", "Right File", "LEN"};
+		int[] bounds = { 100, 325, 325, 50};
 
 		for (int index = 0; index < titles.length; index++) {
 			createTableViewerColumn(titles[index], bounds[index]);
@@ -159,7 +161,7 @@ public class CloneSetView extends ViewPart {
 
 	private void setTableViewerColumn() {
 		TableColumn[] tableColumns = table.getColumns();
-
+		
 		for (TableColumn tableColumn:tableColumns) {
 			TableViewerColumn viewerColumn = (TableViewerColumn) tableColumn.getData(Policy.JFACE + ".columnViewer"); //$NON-NLS-1$
 			switch (tableColumn.getText()) {
@@ -169,6 +171,32 @@ public class CloneSetView extends ViewPart {
 						public String getText(Object element) {
 							CloneSet cloneSet = (CloneSet) element;
 							return String.valueOf(cloneSet.id);
+						}
+					});
+					break;
+				case "Left File":
+					viewerColumn.setLabelProvider(new ColumnLabelProvider() {
+						@Override
+						public String getText(Object element) {
+							CloneSet cloneSet = (CloneSet) element;
+							long[] cloneSetIDs = new long[] { cloneSet.id };
+							ClonePair[] pairs = rootModel.getClonePairsOfCloneSets(cloneSetIDs);
+							int ClonePairIndex = (pairs.length + 1) % pairs.length;
+							SourceFile file = rootModel.getFile(pairs[ClonePairIndex].leftFile);
+							return String.valueOf(file.path.substring(file.path.lastIndexOf("/")+1));
+						}
+					});
+					break;
+				case "Right File":
+					viewerColumn.setLabelProvider(new ColumnLabelProvider() {
+						@Override
+						public String getText(Object element) {
+							CloneSet cloneSet = (CloneSet) element;
+							long[] cloneSetIDs = new long[] { cloneSet.id };
+							ClonePair[] pairs = rootModel.getClonePairsOfCloneSets(cloneSetIDs);
+							int ClonePairIndex = (pairs.length + 1) % pairs.length;
+							SourceFile file = rootModel.getFile(pairs[ClonePairIndex].rightFile);
+							return String.valueOf(file.path.substring(file.path.lastIndexOf("/")+1));
 						}
 					});
 					break;

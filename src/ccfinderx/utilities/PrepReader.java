@@ -29,7 +29,7 @@ public class PrepReader {
 	}
 	public PrepToken[] read(String sourceFilePath, String postfix) throws FileNotFoundException, IOException, PrepReaderError {
 		File file = new File(".");
-		System.out.println(file.getCanonicalPath());
+		//System.out.println(file.getCanonicalPath());
 		byte[] buffer = CCFinderX.theInstance.openPrepFile(sourceFilePath, postfix);
 		if (buffer == null) {
 			throw new IOException();

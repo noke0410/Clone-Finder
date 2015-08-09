@@ -1017,7 +1017,8 @@ public class TextPane
 	private void setFile(int fileIndex) {
 		this.fileIndex = fileIndex;
 		file = viewedModel.getFile(fileIndex);
-		String filenamestr = String.valueOf(file.id) + " " + file.path; //$NON-NLS-1$
+		//String filenamestr = String.valueOf(file.id) + " " + file.path.replaceAll("/", "\\\\"); //$NON-NLS-1$
+		String filenamestr = String.valueOf(file.id) + " " + file.path.substring(file.path.lastIndexOf("/")+1); //$NON-NLS-1$
 		fileNameLabel.setText(filenamestr); //$NON-NLS-1$
 		fileNameLabel.setToolTipText(filenamestr);
 		CcfxDetectionOptions options = viewedModel.getDetectionOption();
@@ -1029,6 +1030,7 @@ public class TextPane
 		tokenEndIndices = null;
 		
 		String prepFilePath = toPrepFilePath(file.path, prepDirs);
+		prepFilePath = prepFilePath.replaceAll("/", "\\\\");
 		
 		try {
 			tokens = (new PrepReader()).read(prepFilePath, postfix);
