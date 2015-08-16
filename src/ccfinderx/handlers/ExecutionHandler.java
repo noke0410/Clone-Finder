@@ -54,10 +54,9 @@ public class ExecutionHandler extends AbstractHandler {
 		projectList = new ArrayList<String>();
 		for (IProject p : projects)
 		{
-			if (p.getName().equals("RemoteSystemsTempFiles"))
-			{
-				continue;
-			}
+			if (p.getName().equals("RemoteSystemsTempFiles")) continue;
+			//if (!p.isOpen()) continue;
+			
 			projectList.add(p.getName());
 		}
 		

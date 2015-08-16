@@ -97,5 +97,8 @@
             name="Clone Code">
       </editor>
    </extension>
+   <extension
+         point="org.eclipse.core.resources.filterMatchers">
+   </extension>
 
 </plugin>
